@@ -1,74 +1,77 @@
 
+LIBNAME          := argx
+ifeq ($(LIBNAME),)
+$(error LIBNAME was not set)
+endif
+
 CC               ?= gcc
 AR               ?= ar
-RM               ?= rm
-CFLAGS           ?= -Wall -Wextra
-LDFLAGS          ?= 
-CP               ?= cp
+CFLAGS           := -MMD -MP -Iinclude
+LDFLAGS          := 
 
-C_RELEASE_FLAGS  := -O2
-C_DEBUG_FLAGS    := -g
-CFLAGS           += -Iinclude -fPIC -MMD -MP
+C_RELEASEFLAGS   := -O2
+C_DEBUGFLAGS     := -g
 
-BUILD_DIR        ?= build
-OBJS_DIR         ?= $(BUILD_DIR)
-SRC_DIR          ?= src
-INCLUDE_DIR      ?= include
-STATIC_LIB_NAME  := libargx.a
-STATIC_LIB_DIR   := $(BUILD_DIR)
-SHARED_LIB_NAME  := libargx.so
-SHARED_LIB_DIR   := $(BUILD_DIR)
-STATIC_LIB_PATH  := $(STATIC_LIB_DIR)/$(STATIC_LIB_NAME)
-SHARED_LIB_PATH  := $(SHARED_LIB_DIR)/$(SHARED_LIB_NAME)
+CWARNINGS        := -Wall -Wextra
+CFLAGS           += $(CWARNINGS)
 
-OBJS := \
-$(OBJS_DIR)/argx.o
+EXTRA_CFLAGS     ?= 
+EXTRA_LDFLAGS    ?=
 
-SRC := \
-$(SRC_DIR)/argx.c
+CFLAGS           += $(EXTRA_CFLAGS)
+LDFLAGS          += $(EXTRA_LDFLAGS)
 
-DEPENDS := $(patsubst %.o,%.d,$(OBJS))
+BUILDDIR         := build
+INCLUDEDIR       := include
+SRCDIR           := src
 
-HEADERS = \
-$(INCLUDE_DIR)/argx/argx.h
+SRC              := \
+$(SRCDIR)/argx.c \
 
-MAKEFLAGS += --no-print-directory
+IS_RELEASE       := $(filter release, $(MAKECMDGOALS))
+ifeq ($(IS_RELEASE), release)
+	CFLAGS += $(C_RELEASEFLAGS)
+else
+	CFLAGS += $(C_DEBUGFLAGS)
+endif
 
-.PHONY: all debug release install clean test uninstall
+DEPS             := $(SRC:%.c=%.d)
+DEPS             := $(DEPS:$(SRCDIR)/%=%)
+DEPS             := $(addprefix $(BUILDDIR)/, $(DEPS))
 
-$(shell mkdir -p $(BUILD_DIR))
+OBJS             := $(SRC:%.c=%.o)
+OBJS             := $(OBJS:$(SRCDIR)/%=%)
+OBJS             := $(addprefix $(BUILDDIR)/, $(OBJS))
+
+HEADERS          := \
+$(INCLUDEDIR)/argx/argx.h
+
+OUT_LIBSTATIC_PATH := $(BUILDDIR)/lib$(LIBNAME).a
+OUT_LIBSHARED_PATH := $(BUILDDIR)/lib$(LIBNAME).so
 
 all: debug
 
-debug: CFLAGS += $(C_DEBUG_FLAGS)
-debug: $(OBJS) $(HEADERS) Makefile
-	@#create the static lib
-	$(AR) rcs $(STATIC_LIB_PATH) $(OBJS)
-	@# create the shared lib
-	$(CC) -shared $(OBJS) -o $(SHARED_LIB_PATH)
+debug: $(OBJS) Makefile
+	$(AR) rcs $(OUT_LIBSTATIC_PATH) $(OBJS)
+	$(CC) -shared $(OBJS) $(LDFLAGS) -o $(OUT_LIBSHARED_PATH)
 
-release: CFLAGS += $(C_RELEASE_FLAGS)
-release: $(OBJS) $(HEADERS) Makefile 
-	@#create the static lib
-	$(AR) rcs $(STATIC_LIB_PATH) $(OBJS)
-	@#create the shared lib
-	$(CC) -shared $(OBJS) -o $(SHARED_LIB_PATH)
+release: $(OBJS) Makefile
+	$(AR) rcs $(OUT_LIBSTATIC_PATH) $(OBJS)
+	$(CC) -shared $(OBJS) $(LDFLAGS) -o $(OUT_LIBSHARED_PATH)
+
+-include $(DEPS)
+
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c Makefile
+	@mkdir -p $(dir $@)
+	$(CC) -c $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 clean:
-	$(RM) $(OBJS) $(BIN_NAME) 
-	$(RM) $(SHARED_LIB_PATH) $(STATIC_LIB_PATH)
-	$(RM) $(DEPENDS)
+	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.d
 
-install:
-	$(MAKE) release
-	$(CP) $(STATIC_LIB_PATH) /usr/lib
-	$(CP) -r $(INCLUDE_DIR)/argx /usr/include/ 
+mrclean:
+	$(MAKE) clean
+	rm -f $(OUT_LIBSHARED_PATH) $(OUT_LIBSTATIC_PATH)
+	rmdir -p $(BUILDDIR) || true
 
-uninstall:
-	$(RM) -f /usr/lib/$(STATIC_LIB_NAME)
-	$(RM) -rf /usr/include/argx
 
--include $(DEPENDS)
-
-$(OBJS_DIR)/%.o : $(SRC_DIR)/%.c Makefile
-	$(CC) -c $< $(CFLAGS) $(LDFLAGS) -o $@
+.PHONY: all debug release clean mrclean install 
