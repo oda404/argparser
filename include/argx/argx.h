@@ -1,8 +1,8 @@
 // Copyright (c) Olaru Alexandru <xdxalexandru404@gmail.com>
 // Licensed under the MIT license found in the LICENSE file in the root of this repository.
 
-#ifndef ARGPARSER_H
-#define ARGPARSER_H
+#ifndef ARGX_H
+#define ARGX_H
 
 #include<stddef.h>
 #define ARGPARSER_ARG_OK        0
@@ -64,4 +64,4 @@ int args_was_found(const char *name, Args *args);
 }
 #endif
 
-#endif // ARGPARSER_H
+#endif // ARGX_H

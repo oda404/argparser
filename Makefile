@@ -14,23 +14,23 @@ BUILD_DIR        ?= build
 OBJS_DIR         ?= $(BUILD_DIR)
 SRC_DIR          ?= src
 INCLUDE_DIR      ?= include
-STATIC_LIB_NAME  := libargparser.a
+STATIC_LIB_NAME  := libargx.a
 STATIC_LIB_DIR   := $(BUILD_DIR)
-SHARED_LIB_NAME  := libargparser.so
+SHARED_LIB_NAME  := libargx.so
 SHARED_LIB_DIR   := $(BUILD_DIR)
 STATIC_LIB_PATH  := $(STATIC_LIB_DIR)/$(STATIC_LIB_NAME)
 SHARED_LIB_PATH  := $(SHARED_LIB_DIR)/$(SHARED_LIB_NAME)
 
 OBJS := \
-$(OBJS_DIR)/argparser.o
+$(OBJS_DIR)/argx.o
 
 SRC := \
-$(SRC_DIR)/argparser.c
+$(SRC_DIR)/argx.c
 
 DEPENDS := $(patsubst %.o,%.d,$(OBJS))
 
 HEADERS = \
-$(INCLUDE_DIR)/argparser/argparser.h
+$(INCLUDE_DIR)/argx/argx.h
 
 MAKEFLAGS += --no-print-directory
 
@@ -62,11 +62,11 @@ clean:
 install:
 	$(MAKE) release
 	$(CP) $(STATIC_LIB_PATH) /usr/lib
-	$(CP) -r $(INCLUDE_DIR)/argparser /usr/include/ 
+	$(CP) -r $(INCLUDE_DIR)/argx /usr/include/ 
 
 uninstall:
 	$(RM) -f /usr/lib/$(STATIC_LIB_NAME)
-	$(RM) -rf /usr/include/argparser
+	$(RM) -rf /usr/include/argx
 
 -include $(DEPENDS)
 
