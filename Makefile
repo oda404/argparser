@@ -71,7 +71,17 @@ clean:
 mrclean:
 	$(MAKE) clean
 	rm -f $(OUT_LIBSHARED_PATH) $(OUT_LIBSTATIC_PATH)
-	rmdir -p $(BUILDDIR) || true
+	rmdir $(BUILDDIR) || true
 
+install:
+	$(MAKE) release
+	mkdir -p /usr/include/$(LIBNAME)
+	cp $(HEADERS) /usr/include/$(LIBNAME)
+	cp $(OUT_LIBSHARED_PATH) /usr/lib
 
-.PHONY: all debug release clean mrclean install 
+uninstall:
+	rm -f $(addprefix /usr/include/$(LIBNAME)/, $(notdir $(HEADERS)))
+	rmdir /usr/include/$(LIBNAME) || true
+	rm -f /usr/lib/$(notdir $(OUT_LIBSHARED_PATH))
+
+.PHONY: all debug release clean mrclean install uninstall
