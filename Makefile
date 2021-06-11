@@ -73,6 +73,12 @@ mrclean:
 	rm -f $(OUT_LIBSHARED_PATH) $(OUT_LIBSTATIC_PATH)
 	rmdir $(BUILDDIR) || true
 
+tests: $(TESTS)
+	$(CC) -g -Wall -Wextra -Iinclude -largx tests/test.c -o tests/test.out
+	tests/test.out --help --uint 2976579765 --string itiomorbovina
+	tests/test.out -h -u 2976579765 -s itiomorbovina
+	@rm -f tests/test.out
+
 install:
 	$(MAKE) release
 	mkdir -p /usr/include/$(LIBNAME)
@@ -84,4 +90,4 @@ uninstall:
 	rmdir /usr/include/$(LIBNAME) || true
 	rm -f /usr/lib/$(notdir $(OUT_LIBSHARED_PATH))
 
-.PHONY: all debug release clean mrclean install uninstall
+.PHONY: all debug release clean mrclean install uninstall tests
