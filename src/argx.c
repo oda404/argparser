@@ -11,8 +11,7 @@
 
 static int is_number(const char *str)
 {
-    UI i = 0;
-    for(; i < strlen(str); ++i)
+    for(size_t i = 0; i < strlen(str); ++i)
     {
         if(!isdigit(str[i]))
             return 0;
@@ -21,165 +20,160 @@ static int is_number(const char *str)
     return 1;
 }
 
-void args_init(Args *args)
+static ArgxArgument *argx_get_arg_by_name(const char *name, Argx *argx)
 {
-    args->args_arr = NULL;
-    args->argsc = 0;
+    for(size_t i = 0; i < argx->args_cnt; i++)
+    {
+        ArgxArgument *tmp = &argx->args[i];
+        if(strcmp(tmp->name, name) == 0)
+            return tmp;
+    }
+    return NULL;
 }
 
-void args_add(
+void argx_init(Argx *argx)
+{
+    argx->args = NULL;
+    argx->args_cnt = 0;
+}
+
+void argx_destroy(Argx *argx)
+{
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        free(argx->args[i].value);
+        free(argx->args[i].name);
+        free(argx->args[i].arg_short);
+        free(argx->args[i].arg_long);
+    }
+    free(argx->args);
+    argx_init(argx);
+}
+
+ArgxAddStatus argx_arg_add(
     const char *name,
     const char *arg_short,
     const char *arg_long,
     int is_flag,
-    Args *args
+    Argx *argx
 )
 {
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        ArgxArgument *tmp = &argx->args[i];
+        if(strcmp(name, tmp->name) == 0)
+            return ARGX_ADD_NAME_DUP;
+        if(strcmp(arg_short, tmp->arg_short) == 0)
+            return ARGX_ADD_SHORT_DUP;
+        if(strcmp(arg_long, tmp->arg_long) == 0)
+            return ARGX_ADD_LONG_DUP;
+    }
+
     /* make space for the new arg */
-    args->args_arr = 
-    realloc(
-        args->args_arr, 
-        sizeof(Arg) * (args->argsc + 1)
+    argx->args = realloc(
+        argx->args, 
+        sizeof(ArgxArgument) * (argx->args_cnt + 1)
     );
 
-    Arg *head_arg = &args->args_arr[args->argsc];
+    ArgxArgument *head = &argx->args[argx->args_cnt];
 
-    head_arg->name = malloc(sizeof(char) * (strlen(name) + 1));
-    strcpy(head_arg->name, name);
-    head_arg->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
-    strcpy(head_arg->arg_short, arg_short);
-    head_arg->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
-    strcpy(head_arg->arg_long, arg_long);
-    head_arg->is_flag = is_flag;
-    head_arg->value = NULL;
+    head->name = malloc(sizeof(char) * (strlen(name) + 1));
+    strcpy(head->name, name);
 
-    ++args->argsc;
+    head->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
+    strcpy(head->arg_short, arg_short);
+
+    head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
+    strcpy(head->arg_long, arg_long);
+
+    head->is_flag = is_flag;
+    head->value = NULL;
+
+    ++argx->args_cnt;
+
+    return ARGX_ADD_OK;
 }
 
-void args_free(Args *args)
+void argx_args_parse(char **argv, int argc, Argx *argx)
 {
-    UI i = 0;
-    for(; i < args->argsc; ++i)
+    for(size_t args_i = 0; args_i < (size_t)argc; ++args_i)
     {
-        free(args->args_arr[i].value);
-        free(args->args_arr[i].name);
-        free(args->args_arr[i].arg_short);
-        free(args->args_arr[i].arg_long);
-    }
-    free(args->args_arr);
-    /* clean up */
-    args_init(args);
-}
-
-void args_parse(int argc, char **argv, Args *args)
-{
-    UI argv_i = 0;
-    UI args_i = 0;
-
-    for(; args_i < args->argsc; ++args_i)
-    {
-        for(argv_i = 0; argv_i < (UI)argc; ++argv_i)
+        for(size_t argx_i = 0; argx_i < argx->args_cnt; ++argx_i)
         {
-            Arg *arg_tmp = &args->args_arr[args_i];
+            ArgxArgument *tmp = &argx->args[argx_i];
+
             if(
-                strcmp(arg_tmp->arg_short, argv[argv_i]) == 0 ||
-                strcmp(arg_tmp->arg_long, argv[argv_i]) == 0
+                strcmp(tmp->arg_short, argv[args_i]) == 0 ||
+                strcmp(tmp->arg_long, argv[args_i]) == 0
             )
             {
-                if(arg_tmp->is_flag)
+                if(tmp->is_flag)
                 {
-                    /* we only malloc it, if arg_tmp->value is not NULL, the flag was set */
-                    arg_tmp->value = malloc(1);
+                    /* Argument is a flag and isn't followed by a value. */
+                    tmp->value = malloc(1);
                 }
-                else if(argv_i + 1 < (UI)argc)
+                else if(args_i + 1 < (size_t)argc)
                 {
-                    arg_tmp->value =
-                    malloc(sizeof(char) * (strlen(argv[argv_i + 1]) + 1));
-                    strcpy(arg_tmp->value, argv[argv_i + 1]);
+                    /* 
+                     * Arg is supposed to have a following value.
+                     */
+                    tmp->value = malloc(sizeof(char) *  (strlen(argv[args_i + 1]) + 1));
+                    strcpy(tmp->value, argv[args_i + 1]);
+
+                    /* maybe increment args_i ? */
+                    // ++args_i;
                 }
                 else
                 {
-                    printf("[argparser] Warning: Invalid value for arg '%s'\n", argv[argv_i]);
+                    printf("[argx] Non flag argument: \"%s\" has no following value.\n", argv[args_i]);
                 }
+                break;
             }
         }
     }
 }
 
-int args_was_found(const char *name, Args *args)
+ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx)
 {
-    UI i = 0;
-    for(; i < args->argsc; i++)
-    {
-        Arg *tmp_arg = &args->args_arr[i];
-        if(strcmp(tmp_arg->name, name) == 0)
-        {
-            if(tmp_arg->value)
-            {
-                return 1;
-            }
-            break;
-        }
-    }
+    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    if(!arg || !arg->value)
+        return ARGX_GET_NOT_FOUND;
 
-    return 0;
+    strcpy(out, arg->value);
+    return ARGX_GET_OK;
 }
 
-size_t args_get_val_len(const char *name, Args *args)
+ArgxGetStatus argx_arg_get_uint(const char *name, UI *out, Argx *argx)
 {
-    UI i = 0;
-    for(; i < args->argsc; i++)
-    {
-        Arg *tmp_arg = &args->args_arr[i];
-        if(strcmp(tmp_arg->name, name) == 0)
-        {
-            if(tmp_arg->value && !tmp_arg->is_flag)
-            {
-                return strlen(tmp_arg->value);
-            }
-            break;
-        }
-    }
+    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    if(!arg || !arg->value)
+        return ARGX_GET_NOT_FOUND;
 
-    return 0;
+    if(!is_number(arg->value))
+        return ARGX_GET_TYPE_MISSMATCH;
+        
+    *out = (UI)atoll(arg->value);
+    return ARGX_GET_OK;
 }
 
-int args_out_str(const char *name, char *out, Args *args)
+ArgxGetStatus argx_arg_get_str_len(const char *name, size_t *out, Argx *argx)
 {
-    UI i = 0;
-    for(; i < args->argsc; ++i)
-    {
-        Arg *tmp_arg = &args->args_arr[i];
-        if(strcmp(tmp_arg->name, name) == 0)
-        {
-            if(tmp_arg->value)
-            {
-                strcpy(out, tmp_arg->value);
-                return ARGPARSER_ARG_OK;
-            }
-            break;
-        }
-    }
+    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    if(!arg || !arg->value)
+        return ARGX_GET_NOT_FOUND;
 
-    return ARGPARSER_ARG_NOT_FOUND;
+    if(arg->is_flag)
+        return ARGX_GET_TYPE_MISSMATCH;
+
+    *out = strlen(arg->value);
+    return ARGX_GET_OK;
 }
 
-int args_out_uint(const char *name, UI *out, Args *args)
+int argx_arg_present(const char *name, Argx *argx)
 {
-    UI i = 0;
-    for(; i < args->argsc; ++i)
-    {
-        Arg *tmp_arg = &args->args_arr[i];
-        if(strcmp(tmp_arg->name, name) == 0)
-        {
-            if(tmp_arg->value && is_number(tmp_arg->value))
-            {
-                *out = (UI)atoi(tmp_arg->value);
-                return ARGPARSER_ARG_OK;
-            }
-            break;
-        }
-    }
+    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    if(!arg || !arg->value)
+        return 0;
 
-    return ARGPARSER_ARG_NOT_FOUND;
+    return 1;
 }

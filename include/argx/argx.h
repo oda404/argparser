@@ -5,60 +5,110 @@
 #define ARGX_H
 
 #include<stddef.h>
-#define ARGPARSER_ARG_OK        0
-#define ARGPARSER_ARG_NOT_FOUND 1
 
-typedef struct
+typedef enum E_ArgxAddStatus
 {
-    /* the name of the arg */
+    ARGX_ADD_OK        = 0,
+    ARGX_ADD_NAME_DUP  = 1,
+    ARGX_ADD_SHORT_DUP = 2,
+    ARGX_ADD_LONG_DUP  = 3
+} ArgxAddStatus;
+
+typedef enum E_ArgxGetStatus
+{
+    /* Info was gathered successfully. */
+    ARGX_GET_OK = 0,
+    /* 
+     * Argument was either not added by argx_arg_add or 
+     * argx_args_parse didn't find it.
+     */
+    ARGX_GET_NOT_FOUND = 1,
+    /* */
+    ARGX_GET_TYPE_MISSMATCH = 2
+} ArgxGetStatus;
+
+typedef struct S_ArgxArgument
+{
 	char *name;
-    /* short cli arg */
 	char *arg_short;
-    /* long cli arg */
 	char *arg_long;
     char *value;
-    /* 
-    set to 1 if the arg isn't succedeed by a value, a.k.a a flag
-    ex: '-h' opposed to '-n 2'.
-    Note that args that have this set to 1
-    should only be interfaced with using the 
-    args_was_found function.
-    */
 	int is_flag;
-} Arg;
+} ArgxArgument;
 
-typedef struct 
+typedef struct S_Argx
 {
-    Arg *args_arr;
-    unsigned int argsc;
-} Args;
+    ArgxArgument *args;
+    size_t args_cnt;
+} Argx;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* init the args struct */
-void args_init(Args *args);
-/* free the args struct and reinit */
-void args_free(Args *args);
-/* add a new arg to the args struct for later parsing */
-void args_add(
+/* 
+ * Inits the argx struct.
+ * @param argx Argx handle.
+ */
+void argx_init(Argx *argx);
+/* 
+ * Destroys the argx struct and frees any associated memory.
+ * @param argx Argx handle.
+ */
+void argx_destroy(Argx *argx);
+/* 
+ * Adds a new argument to the argx struct for later parsing. 
+ * @param name The name of the argument.
+ * @param arg_short The short CLI version of the argument.
+ * @param arg_long The long CLI version of the argument.
+ * @param is_flag Whether the argument is a flag or not the argument.
+ * @param argx Argx handle.
+ */
+ArgxAddStatus argx_arg_add(
     const char *name,
     const char *arg_short,
     const char *arg_long,
     int is_flag,
-    Args *args
+    Argx *argx
 );
-
-/* try to parse all of the added args */
-void args_parse(int argc, char **argv, Args *args);
-/* note that "out" should be allocated before calling this function */
-int args_out_str(const char *name, char *out, Args *args);
-int args_out_uint(const char *name, unsigned int *out, Args *args);
-/* returns the length of the given's arg value, returns 0 if there were any errors (passing it a flag will be considered an error) */
-size_t args_get_val_len(const char *name, Args *args);
-/* returns 1 if the arg was found when parsing, 0 otherwise. Also used for flags*/
-int args_was_found(const char *name, Args *args);
+/* Parses based on the previously added arguments to the 'argx' struct.
+ * @param argv The array of arguments to parse.
+ * @param argc The number of arguments to parse from 'argv'.
+ * @param argx Argx handle.
+ */
+void argx_args_parse(char **argv, int argc, Argx *argx);
+/*
+ * Searches for the argument with name 'name', interprets it's value as a string and stores it into 'out'. 
+ * Note that 'out' should be properly allocated before calling thing function (see argx_arg_get_str_len).
+ * @param name The name of the argument.
+ * @param out Where the value of the argument will be stored.
+ * @param argx Argx handle.
+ */
+ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx);
+/*
+ * Searches for the argument with name 'name', interprets it's value as an unsigned int and stores it into 'out'. 
+ * If any errors occur, the value of 'out' is not touched.
+ * @param name The name of the argument.
+ * @param out Where the value of the argument will be stored.
+ * @param argx Argx handle.
+ */
+ArgxGetStatus argx_arg_get_uint(const char *name, unsigned int *out, Argx *argx);
+/*
+ * Searches for the argument with name 'name', interprets it's value as a string, gets it's length and stores it into 'out'. 
+ * If any errors occur, the value of 'out' is not touched.
+ * @param name The name of the argument.
+ * @param out Where the string's length will be stored.
+ * @param argx Argx handle.
+ */
+ArgxGetStatus argx_arg_get_str_len(const char *name, size_t *out, Argx *argx);
+/*
+ * Searches for the argument with name 'name'. 
+ * If any errors occur, the value of 'out' is not touched.
+ * @param name The name of the argument.
+ * @param argx Argx handle.
+ * @return 1 if the argument was found, 0 otherwise.
+ */
+int argx_arg_present(const char *name, Argx *argx);
 
 #ifdef __cplusplus
 }
