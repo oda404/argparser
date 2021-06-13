@@ -8,10 +8,27 @@
 
 typedef enum E_ArgxAddStatus
 {
-    ARGX_ADD_OK        = 0,
-    ARGX_ADD_NAME_DUP  = 1,
-    ARGX_ADD_SHORT_DUP = 2,
-    ARGX_ADD_LONG_DUP  = 3
+    ARGX_ADD_OK             = 0,
+    /** 
+     * Another argument with the same S_ArgxArgument::name
+     * already exists.
+     */
+    ARGX_ADD_NAME_DUP       = 1,
+    /** 
+     * Another argument with the same S_ArgxArgument::arg_short
+     * already exists.
+     */
+    ARGX_ADD_SHORT_DUP      = 2,
+    /** 
+     * Another argument with the same S_ArgxArgument::arg_long
+     * already exists.
+     */
+    ARGX_ADD_LONG_DUP       = 3,
+    /** 
+     * Both S_ArgxArgument::arg_short and S_ArgxArgument::arg_long 
+     * were NULL.
+     */
+    ARGX_ADD_INVALID_ARGS   = 4
 } ArgxAddStatus;
 
 typedef enum E_ArgxGetStatus
@@ -23,7 +40,7 @@ typedef enum E_ArgxGetStatus
      * argx_args_parse didn't find it.
      */
     ARGX_GET_NOT_FOUND = 1,
-    /* */
+    /* An argument was interepreted in an invalid way. */
     ARGX_GET_TYPE_MISSMATCH = 2
 } ArgxGetStatus;
 
@@ -58,13 +75,15 @@ void argx_init(Argx *argx);
  * @param argx Argx handle.
  */
 void argx_destroy(Argx *argx);
-/* 
+/**
  * Adds a new argument to the argx struct for later parsing. 
  * @param name The name of the argument.
- * @param arg_short The short CLI version of the argument.
- * @param arg_long The long CLI version of the argument.
+ * @param [arg_short] The short CLI version of the argument. 
+ * @param [arg_long] The long CLI version of the argument. 
+ * @param [description] Description of the argument, used for generating the help message. 
  * @param is_flag Whether the argument is a flag or not the argument.
  * @param argx Argx handle.
+ * @returns {ArgxAddStatus} 
  */
 ArgxAddStatus argx_arg_add(
     const char *name,
@@ -74,7 +93,8 @@ ArgxAddStatus argx_arg_add(
     int is_flag,
     Argx *argx
 );
-/* Parses based on the previously added arguments to the 'argx' struct.
+/**
+ *  Parses based on the previously added arguments to the 'argx' struct.
  * @param argv The array of arguments to parse.
  * @param argc The number of arguments to parse from 'argv'.
  * @param argx Argx handle.

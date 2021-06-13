@@ -61,14 +61,17 @@ ArgxAddStatus argx_arg_add(
     Argx *argx
 )
 {
+    if(!arg_short && !arg_long)
+        return ARGX_ADD_INVALID_ARGS;
+    
     for(size_t i = 0; i < argx->args_cnt; ++i)
     {
         ArgxArgument *tmp = &argx->args[i];
         if(strcmp(name, tmp->name) == 0)
             return ARGX_ADD_NAME_DUP;
-        if(strcmp(arg_short, tmp->arg_short) == 0)
+        if(arg_short && strcmp(arg_short, tmp->arg_short) == 0)
             return ARGX_ADD_SHORT_DUP;
-        if(strcmp(arg_long, tmp->arg_long) == 0)
+        if(arg_long && strcmp(arg_long, tmp->arg_long) == 0)
             return ARGX_ADD_LONG_DUP;
     }
 
@@ -83,14 +86,35 @@ ArgxAddStatus argx_arg_add(
     head->name = malloc(sizeof(char) * (strlen(name) + 1));
     strcpy(head->name, name);
 
-    head->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
-    strcpy(head->arg_short, arg_short);
+    if(arg_short)
+    {
+        head->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
+        strcpy(head->arg_short, arg_short);
+    }
+    else
+    {
+        head->arg_short = NULL;
+    }
+    
+    if(arg_long)
+    {
+        head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
+        strcpy(head->arg_long, arg_long);
+    }
+    else
+    {
+        head->arg_long = NULL;
+    }
 
-    head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
-    strcpy(head->arg_long, arg_long);
-
-    head->description = malloc(sizeof(char) * (strlen(description) + 1));
-    strcpy(head->description, description);
+    if(description)
+    {
+        head->description = malloc(sizeof(char) * (strlen(description) + 1));
+        strcpy(head->description, description);
+    }
+    else
+    {
+        head->description = NULL;
+    }
 
     head->is_flag = is_flag;
     head->value = NULL;
@@ -109,8 +133,8 @@ void argx_args_parse(char **argv, int argc, Argx *argx)
             ArgxArgument *tmp = &argx->args[argx_i];
 
             if(
-                strcmp(tmp->arg_short, argv[args_i]) == 0 ||
-                strcmp(tmp->arg_long, argv[args_i]) == 0
+                (tmp->arg_short && strcmp(tmp->arg_short, argv[args_i]) == 0) ||
+                (tmp->arg_long && strcmp(tmp->arg_long, argv[args_i]) == 0)
             )
             {
                 if(tmp->is_flag)
@@ -201,10 +225,21 @@ int argx_help_msg_gen(
     for(size_t i = 0; i < argx->args_cnt; ++i)
     {
         const ArgxArgument *tmp = &argx->args[i];
-        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+
+        size_t len = 0;
+        if(tmp->arg_short)
+            len += strlen(tmp->arg_short);
+        if(tmp->arg_long)
+            len += strlen(tmp->arg_long);
+
         if(len > longest_arg_len)
             longest_arg_len = len;
 
+        /* 
+         * 2 - the 2 starting whitespaces 
+         * 2 - the comma and the whitespace between args
+         * 1 - \n
+         */
         len += 2 + 2 + 1 + strlen(tmp->description);
         help_msg_len += len;
     }
