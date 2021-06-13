@@ -28,53 +28,60 @@ SRCDIR           := src
 SRC              := \
 $(SRCDIR)/argx.c \
 
-IS_RELEASE       := $(filter release, $(MAKECMDGOALS))
-ifeq ($(IS_RELEASE), release)
-	CFLAGS += $(C_RELEASEFLAGS)
-else
-	CFLAGS += $(C_DEBUGFLAGS)
-endif
-
-DEPS             := $(SRC:%.c=%.d)
-DEPS             := $(DEPS:$(SRCDIR)/%=%)
-DEPS             := $(addprefix $(BUILDDIR)/, $(DEPS))
-
-OBJS             := $(SRC:%.c=%.o)
-OBJS             := $(OBJS:$(SRCDIR)/%=%)
-OBJS             := $(addprefix $(BUILDDIR)/, $(OBJS))
-
 HEADERS          := \
 $(INCLUDEDIR)/argx/argx.h
+
+OBJS_SUFFIX      := 
+IS_RELEASE       := 
+ifeq ($(filter release, $(MAKECMDGOALS)), release)
+	CFLAGS       += $(C_RELEASEFLAGS)
+	IS_RELEASE   := 1
+	OBJS_SUFFIX  := release
+else
+	IS_RELEASE   := 0
+	CFLAGS       += $(C_DEBUGFLAGS)
+	OBJS_SUFFIX  := debug
+endif
+
+CDEPS             := $(SRC:%.c=%_$(OBJS_SUFFIX).c.d)
+CDEPS             := $(CDEPS:$(SRCDIR)/%=%)
+CDEPS             := $(addprefix $(BUILDDIR)/, $(CDEPS))
+
+COBJS             := $(SRC:%.c=%_$(OBJS_SUFFIX).c.o)
+COBJS             := $(COBJS:$(SRCDIR)/%=%)
+COBJS             := $(addprefix $(BUILDDIR)/, $(COBJS))
 
 OUT_LIBSTATIC_PATH := $(BUILDDIR)/lib$(LIBNAME).a
 OUT_LIBSHARED_PATH := $(BUILDDIR)/lib$(LIBNAME).so
 
 all: debug
 
-debug: $(OBJS) Makefile
-	$(AR) rcs $(OUT_LIBSTATIC_PATH) $(OBJS)
-	$(CC) -shared $(OBJS) $(LDFLAGS) -o $(OUT_LIBSHARED_PATH)
+debug: $(COBJS) Makefile
+	@# ar doesn't replace archive members sometimes.. ? 
+	@# I think it skips them when the new ones are smaller than the old ones.. ??
+	@# so I'm deleting the existing one before re-ar-ing.
+	rm -f $(OUT_LIBSTATIC_PATH)
+	$(AR) rcs $(OUT_LIBSTATIC_PATH) $(COBJS)
+	$(CC) -shared $(COBJS) $(LDFLAGS) -o $(OUT_LIBSHARED_PATH)
 
-release: $(OBJS) Makefile
-	$(AR) rcs $(OUT_LIBSTATIC_PATH) $(OBJS)
-	$(CC) -shared $(OBJS) $(LDFLAGS) -o $(OUT_LIBSHARED_PATH)
+# release does the same thing as debug, only some CFLAGS and suffixes change.
+release: debug
 
--include $(DEPS)
+-include $(CDEPS)
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.c Makefile
+$(BUILDDIR)/%_$(OBJS_SUFFIX).c.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) $(LDFLAGS) -o $@ $<
+	$(CC) $< -c $(CFLAGS) $(LDFLAGS) -o $@
 
 clean:
-	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/*.d
+	find $(BUILDDIR) \( -name '*.c.o' -o -name '*.c.d' \) -type f -delete || true
 
-mrclean:
-	$(MAKE) clean
-	rm -f $(OUT_LIBSHARED_PATH) $(OUT_LIBSTATIC_PATH)
-	rmdir $(BUILDDIR) || true
+mrclean: clean
+	rm -f $(BUILDDIR)/*.so $(BUILDDIR)/*.a
+	find $(BUILDDIR) -name '*' -type d -delete || true
 
 tests: $(TESTS)
-	$(CC) -g -Wall -Wextra -Iinclude -largx tests/test.c -o tests/test.out
+	$(CC) tests/test.c -g -Wall -Wextra -Iinclude -L./build -largx -o tests/test.out
 	tests/test.out --help --uint 2976579765 --string itiomorbovina
 	tests/test.out -h -u 2976579765 -s itiomorbovina
 	@rm -f tests/test.out
