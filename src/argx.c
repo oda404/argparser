@@ -48,6 +48,7 @@ void argx_destroy(Argx *argx)
         free(argx->args[i].arg_long);
     }
     free(argx->args);
+    free(argx->help_msg);
     argx_init(argx);
 }
 
@@ -183,12 +184,68 @@ int argx_arg_present(const char *name, Argx *argx)
     return 1;
 }
 
-int argx_help_msg_gen(Argx *argx)
+int argx_help_msg_gen(
+    const char *usage, 
+    const char *description,
+    Argx *argx
+)
 {
-    
+    if(!argx->args_cnt)
+        return 1;
+
+    size_t longest_arg_len = 0;
+    size_t help_msg_len = 0;
+
+    help_msg_len += strlen(usage) + strlen(description) + 3;
+
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        const ArgxArgument *tmp = &argx->args[i];
+        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+        if(len > longest_arg_len)
+            longest_arg_len = len;
+
+        len += 2 + 2 + 1 + strlen(tmp->description);
+        help_msg_len += len;
+    }
+
+    /* 
+     * We still need to calculate the space between the CLI args 
+     * and the arg description. We do that based on the longest arg
+     * so it looks nicer.
+     */
+
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        const ArgxArgument *tmp = &argx->args[i];
+        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+        help_msg_len += longest_arg_len - len + 3;
+    }
+
+    argx->help_msg = malloc(sizeof(char) * (help_msg_len + 1));
+    size_t written = 0;
+    written = sprintf(argx->help_msg, "%s\n%s\n\n", usage, description);
+
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        const ArgxArgument *tmp = &argx->args[i];
+
+        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+        written += sprintf(argx->help_msg + written, "  %s, %s   ", tmp->arg_short, tmp->arg_long);
+
+        for(size_t k = 0; k < longest_arg_len - len; ++k)
+        {
+            strcat(argx->help_msg, " ");
+            ++written;
+        }
+
+        written += sprintf(argx->help_msg + written, "%s\n", tmp->description);
+    }
+
+    return 0;
 }
 
 const char *argx_help_msg_get(Argx *argx)
 {
-
+    return argx->help_msg;
 }
