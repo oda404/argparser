@@ -35,6 +35,7 @@ void argx_init(Argx *argx)
 {
     argx->args = NULL;
     argx->args_cnt = 0;
+    argx->help_msg = NULL;
 }
 
 void argx_destroy(Argx *argx)
@@ -176,4 +177,14 @@ int argx_arg_present(const char *name, Argx *argx)
         return 0;
 
     return 1;
+}
+
+int argx_help_msg_gen(Argx *argx)
+{
+    
+}
+
+const char *argx_help_msg_get(Argx *argx)
+{
+
 }
