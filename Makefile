@@ -81,7 +81,8 @@ mrclean: clean
 	find $(BUILDDIR) -name '*' -type d -delete || true
 
 tests: $(TESTS)
-	$(CC) tests/test.c -g -Wall -Wextra -Iinclude -L./build -largx -o tests/test.out
+	$(MAKE)
+	$(CC) tests/test.c -g -Wall -Wextra -Iinclude -Lbuild -l:libargx.a -o tests/test.out
 	tests/test.out --help --uint 2976579765 --string itiomorbovina
 	tests/test.out -h -u 2976579765 -s itiomorbovina
 	@rm -f tests/test.out
