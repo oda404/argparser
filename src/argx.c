@@ -208,76 +208,110 @@ int argx_arg_present(const char *name, Argx *argx)
     return 1;
 }
 
-int argx_help_msg_gen(
+ArgxHelpMsgGenStatus argx_help_msg_gen(
     const char *usage, 
     const char *description,
     Argx *argx
 )
 {
+    //FIXME: description is missaligned when
+    // some arguments only have arg_short or arg_long defined
+    // while the other have them both.
+
     if(!argx->args_cnt)
-        return 1;
+        return ARGX_HELP_MSG_GEN_INVALID_ARGS;
 
+    size_t written = 0;
     size_t longest_arg_len = 0;
-    size_t help_msg_len = 0;
 
-    help_msg_len += strlen(usage) + strlen(description) + 3;
+    if(strlen(usage) + strlen(description) + 3 > ARGX_HELP_MSG_LEN)
+        return 2;
+
+    argx->help_msg = malloc(sizeof(char) * (ARGX_HELP_MSG_LEN + 1));
+
+    written += sprintf(argx->help_msg, "%s\n%s\n\n", usage, description);
+
+    /* find the longest argument */
+    for(size_t i = 0; i < argx->args_cnt; ++i)
+    {
+        const ArgxArgument *tmp = &argx->args[i];
+
+        size_t len = 0;
+        if(tmp->arg_short && tmp->arg_long)
+        {
+            len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+        }
+        else
+        {
+            len = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short);
+        }
+
+        if(len > longest_arg_len)
+            longest_arg_len = len;
+    }
 
     for(size_t i = 0; i < argx->args_cnt; ++i)
     {
         const ArgxArgument *tmp = &argx->args[i];
 
         size_t len = 0;
-        if(tmp->arg_short)
-            len += strlen(tmp->arg_short);
-        if(tmp->arg_long)
-            len += strlen(tmp->arg_long);
+        size_t padding = 0;
 
-        if(len > longest_arg_len)
-            longest_arg_len = len;
-
-        /* 
-         * 2 - the 2 starting whitespaces 
-         * 2 - the comma and the whitespace between args
-         * 1 - \n
-         */
-        len += 2 + 2 + 1 + strlen(tmp->description);
-        help_msg_len += len;
-    }
-
-    /* 
-     * We still need to calculate the space between the CLI args 
-     * and the arg description. We do that based on the longest arg
-     * so it looks nicer.
-     */
-
-    for(size_t i = 0; i < argx->args_cnt; ++i)
-    {
-        const ArgxArgument *tmp = &argx->args[i];
-        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
-        help_msg_len += longest_arg_len - len + 3;
-    }
-
-    argx->help_msg = malloc(sizeof(char) * (help_msg_len + 1));
-    size_t written = 0;
-    written = sprintf(argx->help_msg, "%s\n%s\n\n", usage, description);
-
-    for(size_t i = 0; i < argx->args_cnt; ++i)
-    {
-        const ArgxArgument *tmp = &argx->args[i];
-
-        size_t len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
-        written += sprintf(argx->help_msg + written, "  %s, %s   ", tmp->arg_short, tmp->arg_long);
-
-        for(size_t k = 0; k < longest_arg_len - len; ++k)
+        if(tmp->arg_short && tmp->arg_long)
         {
-            strcat(argx->help_msg, " ");
-            ++written;
+            padding = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+            len = padding + 4;
+            padding = longest_arg_len - padding + 3;
+
+            if(written + len > ARGX_HELP_MSG_LEN)
+                goto die;
+            
+            written += sprintf(argx->help_msg + written, "  %s, %s", tmp->arg_short, tmp->arg_long);
+        }
+        else
+        {
+            padding = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short);
+            len = padding + 2;
+            padding = longest_arg_len - padding + 3;
+
+            if(written + len > ARGX_HELP_MSG_LEN)
+                goto die;
+            
+            written += sprintf(argx->help_msg + written, "  %s", tmp->arg_long ? tmp->arg_long : tmp->arg_short);
         }
 
-        written += sprintf(argx->help_msg + written, "%s\n", tmp->description);
+        for(size_t k = 0; k < padding; ++k)
+        {
+            if(++written > ARGX_HELP_MSG_LEN)
+                goto die;
+            strcat(argx->help_msg, " ");       
+        }
+
+        if(tmp->description)
+        {
+            if(written + strlen(tmp->description) > ARGX_HELP_MSG_LEN)
+                goto die;
+            written += sprintf(argx->help_msg + written, "%s", tmp->description);
+        }
+        else
+        {
+            if(written + 2 > ARGX_HELP_MSG_LEN)
+                goto die;
+            written += sprintf(argx->help_msg + written, "--");
+        }
+
+        if(written + 1 > ARGX_HELP_MSG_LEN)
+            goto die;
+        strcat(argx->help_msg + written, "\n");
+        ++written;
     }
 
-    return 0;
+    return ARGX_HELP_MSG_GEN_OK;
+
+die:
+    free(argx->help_msg);
+    argx->help_msg = NULL;
+    return ARGX_HELP_MSG_GEN_BUF_LIMIT;
 }
 
 const char *argx_help_msg_get(Argx *argx)

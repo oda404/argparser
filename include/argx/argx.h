@@ -6,6 +6,13 @@
 
 #include<stddef.h>
 
+typedef enum E_ArgxHelpMsgGenStatus
+{
+    ARGX_HELP_MSG_GEN_OK            = 0,
+    ARGX_HELP_MSG_GEN_INVALID_ARGS  = 1,
+    ARGX_HELP_MSG_GEN_BUF_LIMIT     = 2
+}  ArgxHelpMsgGenStatus;
+
 typedef enum E_ArgxAddStatus
 {
     ARGX_ADD_OK             = 0,
@@ -58,6 +65,8 @@ typedef struct S_Argx
 {
     ArgxArgument *args;
     size_t args_cnt;
+#define ARGX_HELP_MSG_LEN 4096
+    /* statically allocated until Iyy'm in the mood to make it dynamic. */
     char *help_msg;
 } Argx;
 
@@ -145,7 +154,7 @@ int argx_arg_present(const char *name, Argx *argx);
  * @param argx Argx handle. 
  * @return 0 on success, 1 otherwise.
  */
-int argx_help_msg_gen(
+ArgxHelpMsgGenStatus argx_help_msg_gen(
     const char *usage, 
     const char *description,
     Argx *argx
