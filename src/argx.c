@@ -55,6 +55,7 @@ ArgxAddStatus argx_arg_add(
     const char *name,
     const char *arg_short,
     const char *arg_long,
+    const char *description,
     int is_flag,
     Argx *argx
 )
@@ -86,6 +87,9 @@ ArgxAddStatus argx_arg_add(
 
     head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
     strcpy(head->arg_long, arg_long);
+
+    head->description = malloc(sizeof(char) * (strlen(description) + 1));
+    strcpy(head->description, description);
 
     head->is_flag = is_flag;
     head->value = NULL;
