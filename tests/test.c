@@ -20,13 +20,13 @@ int main(int argc, char **argv)
 
     int status;
 
-    status = argx_arg_add("help",   "-h", "--help",   1, &argx);
+    status = argx_arg_add("help",   "-h", "--help", "show this message and exit",  1, &argx);
     assert(status == ARGX_ADD_OK);
 
-    status = argx_arg_add("string", "-s", "--string", 0, &argx);
+    status = argx_arg_add("string", "-s", "--string", "test string", 0, &argx);
     assert(status == ARGX_ADD_OK);
 
-    status = argx_arg_add("uint",   "-u", "--uint",   0, &argx);
+    status = argx_arg_add("uint",   "-u", "--uint", "test uint",    0, &argx);
     assert(status == ARGX_ADD_OK);
 
     argx_args_parse(argv, argc, &argx);
@@ -83,6 +83,13 @@ int main(int argc, char **argv)
     assert(uint_out == 0);
 
     printf("passed.\n");
+
+    argx_help_msg_gen(
+        "Usage: whore",
+        "damn",
+        &argx
+    );
+    printf("%s\n", argx_help_msg_get(&argx));
 
     argx_destroy(&argx);
     return 0;
