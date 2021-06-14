@@ -69,9 +69,9 @@ ArgxAddStatus argx_arg_add(
         ArgxArgument *tmp = &argx->args[i];
         if(strcmp(name, tmp->name) == 0)
             return ARGX_ADD_NAME_DUP;
-        if(arg_short && strcmp(arg_short, tmp->arg_short) == 0)
+        if(arg_short && tmp->arg_short && strcmp(arg_short, tmp->arg_short) == 0)
             return ARGX_ADD_SHORT_DUP;
-        if(arg_long && strcmp(arg_long, tmp->arg_long) == 0)
+        if(arg_long && tmp->arg_long && strcmp(arg_long, tmp->arg_long) == 0)
             return ARGX_ADD_LONG_DUP;
     }
 
