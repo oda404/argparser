@@ -82,6 +82,7 @@ ArgxAddStatus argx_arg_add(
     );
 
     ArgxArgument *head = &argx->args[argx->args_cnt];
+    memset(head, 0, sizeof(ArgxArgument));
 
     head->name = malloc(sizeof(char) * (strlen(name) + 1));
     strcpy(head->name, name);
@@ -91,19 +92,11 @@ ArgxAddStatus argx_arg_add(
         head->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
         strcpy(head->arg_short, arg_short);
     }
-    else
-    {
-        head->arg_short = NULL;
-    }
     
     if(arg_long)
     {
         head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
         strcpy(head->arg_long, arg_long);
-    }
-    else
-    {
-        head->arg_long = NULL;
     }
 
     if(description)
@@ -111,13 +104,8 @@ ArgxAddStatus argx_arg_add(
         head->description = malloc(sizeof(char) * (strlen(description) + 1));
         strcpy(head->description, description);
     }
-    else
-    {
-        head->description = NULL;
-    }
 
     head->is_flag = is_flag;
-    head->value = NULL;
 
     ++argx->args_cnt;
 
