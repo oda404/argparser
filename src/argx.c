@@ -214,10 +214,6 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
     Argx *argx
 )
 {
-    //FIXME: description is missaligned when
-    // some arguments only have arg_short or arg_long defined
-    // while the other have them both.
-
     if(!argx->args_cnt)
         return ARGX_HELP_MSG_GEN_INVALID_ARGX;
 
@@ -231,7 +227,7 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
 
     written += sprintf(argx->help_msg, "%s\n%s\n\n", usage, description);
 
-    /* find the longest argument */
+    /* find the longest argument without description. */
     for(size_t i = 0; i < argx->args_cnt; ++i)
     {
         const ArgxArgument *tmp = &argx->args[i];
@@ -239,29 +235,29 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
         size_t len = 0;
         if(tmp->arg_short && tmp->arg_long)
         {
-            len = strlen(tmp->arg_short) + strlen(tmp->arg_long);
+            len = strlen(tmp->arg_short) + strlen(tmp->arg_long) + 4;
         }
         else
         {
-            len = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short);
+            len = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short) + 2;
         }
 
         if(len > longest_arg_len)
             longest_arg_len = len;
     }
 
+    /* minimum white-spaces between args and description. */
+    longest_arg_len += 3;
+
     for(size_t i = 0; i < argx->args_cnt; ++i)
     {
         const ArgxArgument *tmp = &argx->args[i];
 
         size_t len = 0;
-        size_t padding = 0;
 
         if(tmp->arg_short && tmp->arg_long)
         {
-            padding = strlen(tmp->arg_short) + strlen(tmp->arg_long);
-            len = padding + 4;
-            padding = longest_arg_len - padding + 3;
+            len = strlen(tmp->arg_short) + strlen(tmp->arg_long) + 4;
 
             if(written + len > ARGX_HELP_MSG_LEN)
                 goto die;
@@ -270,9 +266,7 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
         }
         else
         {
-            padding = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short);
-            len = padding + 2;
-            padding = longest_arg_len - padding + 3;
+            len = strlen(tmp->arg_long ? tmp->arg_long : tmp->arg_short) + 2;
 
             if(written + len > ARGX_HELP_MSG_LEN)
                 goto die;
@@ -280,24 +274,29 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
             written += sprintf(argx->help_msg + written, "  %s", tmp->arg_long ? tmp->arg_long : tmp->arg_short);
         }
 
-        for(size_t k = 0; k < padding; ++k)
+        /* space out arguments and their descriptions so they 
+        all start on the same column. */
+        for(size_t k = len; k < longest_arg_len; ++k)
         {
             if(++written > ARGX_HELP_MSG_LEN)
                 goto die;
-            strcat(argx->help_msg, " ");
+            strcat(argx->help_msg, " ");  
         }
 
         if(tmp->description)
         {
-            if(written + strlen(tmp->description) > ARGX_HELP_MSG_LEN)
+            size_t desc_len = strlen(tmp->description);
+            if(written + desc_len > ARGX_HELP_MSG_LEN)
                 goto die;
-            written += sprintf(argx->help_msg + written, "%s", tmp->description);
+            strcat(argx->help_msg + written, tmp->description);
+            written += desc_len;
         }
         else
         {
             if(written + 2 > ARGX_HELP_MSG_LEN)
                 goto die;
-            written += sprintf(argx->help_msg + written, "--");
+            strcat(argx->help_msg + written, "--");
+            written += 2;
         }
 
         if(written + 1 > ARGX_HELP_MSG_LEN)
