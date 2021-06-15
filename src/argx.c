@@ -46,6 +46,7 @@ void argx_destroy(Argx *argx)
         free(argx->args[i].name);
         free(argx->args[i].arg_short);
         free(argx->args[i].arg_long);
+        free(argx->args[i].description);
     }
     free(argx->args);
     free(argx->help_msg);
