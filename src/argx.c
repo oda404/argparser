@@ -219,7 +219,7 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
     // while the other have them both.
 
     if(!argx->args_cnt)
-        return ARGX_HELP_MSG_GEN_INVALID_ARGS;
+        return ARGX_HELP_MSG_GEN_INVALID_ARGX;
 
     size_t written = 0;
     size_t longest_arg_len = 0;
@@ -284,7 +284,7 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
         {
             if(++written > ARGX_HELP_MSG_LEN)
                 goto die;
-            strcat(argx->help_msg, " ");       
+            strcat(argx->help_msg, " ");
         }
 
         if(tmp->description)
