@@ -15,8 +15,6 @@ set(WARNINGS "-Wall -Wextra")
 
 set(CMAKE_C_FLAGS "${WARNINGS}")
 
-message(${CMAKE_C_FLAGS})
-
 set(SRC_DIR "src")
 set(INCLUDE_DIR "include")
 
@@ -33,6 +31,6 @@ add_library(${PROJECT_NAME}
     ${HEADERS}
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PUBLIC
     ${INCLUDE_DIR}
 )
