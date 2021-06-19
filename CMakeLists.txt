@@ -20,10 +20,12 @@ set(INCLUDE_DIR "include")
 
 set(SRC
     ${SRC_DIR}/argx.c
+    ${SRC_DIR}/argx.cpp
 )
 
 set(HEADERS
     ${INCLUDE_DIR}/argx/argx.h
+    ${INCLUDE_DIR}/argx/argx.hpp
 )
 
 add_library(${PROJECT_NAME}
