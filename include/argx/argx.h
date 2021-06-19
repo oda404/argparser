@@ -127,7 +127,7 @@ void argx_args_parse(char **argv, int argc, Argx *argx);
  * @param argx Argx handle.
  * @return ArgxGetStatus
  */
-ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx);
+ArgxGetStatus argx_arg_val_get_str(const char *name, char *out, Argx *argx);
 /**
  * Searches for the argument with name 'name', interprets it's value as an unsigned int and stores it into 'out'. 
  * If any errors occur, the value of 'out' is not touched.
@@ -136,7 +136,7 @@ ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx);
  * @param argx Argx handle.
  * @return ArgxGetStatus
  */
-ArgxGetStatus argx_arg_get_uint(const char *name, unsigned int *out, Argx *argx);
+ArgxGetStatus argx_arg_val_get_uint(const char *name, unsigned int *out, Argx *argx);
 /**
  * Searches for the argument with name 'name', interprets it's value as a string, gets it's length and stores it into 'out'. 
  * If any errors occur, the value of 'out' is not touched.
@@ -145,7 +145,7 @@ ArgxGetStatus argx_arg_get_uint(const char *name, unsigned int *out, Argx *argx)
  * @param argx Argx handle.
  * @return ArgxGetStatus
  */
-ArgxGetStatus argx_arg_get_str_len(const char *name, size_t *out, Argx *argx);
+ArgxGetStatus argx_arg_val_get_strlen(const char *name, size_t *out, Argx *argx);
 /**
  * Searches for the argument with name 'name'. 
  * If any errors occur, the value of 'out' is not touched.
@@ -171,6 +171,14 @@ ArgxHelpMsgGenStatus argx_help_msg_gen(
  * @return NULL if no message was generated or a pointer to the message otherwise.
  */
 const char *argx_help_msg_get(Argx *argx);
+
+/**
+ * Gets a pointer to the ArgxArgument with name 'name'.
+ * @param name The name of the argument.
+ * @param argx Argx handle.
+ * @return Pointer the specified argument, NULL if none was found.
+*/
+ArgxArgument *argx_arg_get(const char *name, Argx *argx);
 
 #ifdef __cplusplus
 }

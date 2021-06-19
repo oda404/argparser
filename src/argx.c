@@ -20,7 +20,7 @@ static int is_number(const char *str)
     return 1;
 }
 
-static ArgxArgument *argx_get_arg_by_name(const char *name, Argx *argx)
+ArgxArgument *argx_arg_get(const char *name, Argx *argx)
 {
     for(size_t i = 0; i < argx->args_cnt; i++)
     {
@@ -152,9 +152,9 @@ void argx_args_parse(char **argv, int argc, Argx *argx)
     }
 }
 
-ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx)
+ArgxGetStatus argx_arg_val_get_str(const char *name, char *out, Argx *argx)
 {
-    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    ArgxArgument *arg = argx_arg_get(name, argx);
     if(!arg || !arg->value)
         return ARGX_GET_NOT_FOUND;
 
@@ -162,9 +162,9 @@ ArgxGetStatus argx_arg_get_str(const char *name, char *out, Argx *argx)
     return ARGX_GET_OK;
 }
 
-ArgxGetStatus argx_arg_get_uint(const char *name, UI *out, Argx *argx)
+ArgxGetStatus argx_arg_val_get_uint(const char *name, UI *out, Argx *argx)
 {
-    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    ArgxArgument *arg = argx_arg_get(name, argx);
     if(!arg || !arg->value)
         return ARGX_GET_NOT_FOUND;
 
@@ -175,9 +175,9 @@ ArgxGetStatus argx_arg_get_uint(const char *name, UI *out, Argx *argx)
     return ARGX_GET_OK;
 }
 
-ArgxGetStatus argx_arg_get_str_len(const char *name, size_t *out, Argx *argx)
+ArgxGetStatus argx_arg_val_get_strlen(const char *name, size_t *out, Argx *argx)
 {
-    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    ArgxArgument *arg = argx_arg_get(name, argx);
     if(!arg || !arg->value)
         return ARGX_GET_NOT_FOUND;
 
@@ -190,7 +190,7 @@ ArgxGetStatus argx_arg_get_str_len(const char *name, size_t *out, Argx *argx)
 
 int argx_arg_present(const char *name, Argx *argx)
 {
-    ArgxArgument *arg = argx_get_arg_by_name(name, argx);
+    ArgxArgument *arg = argx_arg_get(name, argx);
     if(!arg || !arg->value)
         return 0;
 

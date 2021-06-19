@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     /* check if "help" exists */
     assert(argx_arg_present("help", &argx) == HELP_EXPECT);
     /* "help" is a flag and doesn't have a value. */
-    assert(argx_arg_get_str_len("help", NULL, &argx) == ARGX_GET_TYPE_MISSMATCH);
+    assert(argx_arg_val_get_strlen("help", NULL, &argx) == ARGX_GET_TYPE_MISSMATCH);
 
     /* check if "string" exists */
     assert(argx_arg_present("string", &argx) == 1);
@@ -43,12 +43,12 @@ int main(int argc, char **argv)
     size_t str_out_len = 0;
 
     /* get "string"'s length */
-    status = argx_arg_get_str_len("string", &str_out_len, &argx);
+    status = argx_arg_val_get_strlen("string", &str_out_len, &argx);
     assert(str_out_len == strlen(STRING_EXPECT));
 
     /* get "string"'s value */
     str_out = malloc(sizeof(char) * (str_out_len + 1));
-    status = argx_arg_get_str("string", str_out, &argx);
+    status = argx_arg_val_get_str("string", str_out, &argx);
     assert(status == ARGX_GET_OK);
     assert(strcmp(str_out, STRING_EXPECT) == 0);
     free(str_out);
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 
     unsigned int uint_out;
 
-    status = argx_arg_get_uint("uint", &uint_out, &argx);
+    status = argx_arg_val_get_uint("uint", &uint_out, &argx);
     assert(status == ARGX_GET_OK);
     assert(uint_out == UINT_EXPECT);
 
@@ -68,17 +68,17 @@ int main(int argc, char **argv)
     assert(argx_arg_present("invalid", &argx) == 0);
 
     str_out_len = 0;
-    status = argx_arg_get_str_len("invalid", &str_out_len, &argx);
+    status = argx_arg_val_get_strlen("invalid", &str_out_len, &argx);
     assert(status == ARGX_GET_NOT_FOUND);
     assert(str_out_len == 0);
 
     str_out = NULL;
-    status = argx_arg_get_str("invalid", str_out, &argx);
+    status = argx_arg_val_get_str("invalid", str_out, &argx);
     assert(status == ARGX_GET_NOT_FOUND);
     assert(str_out == NULL);
 
     uint_out = 0;
-    status = argx_arg_get_uint("invalid", &uint_out, &argx);
+    status = argx_arg_val_get_uint("invalid", &uint_out, &argx);
     assert(status == ARGX_GET_NOT_FOUND);
     assert(uint_out == 0);
 
