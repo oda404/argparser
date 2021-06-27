@@ -88,19 +88,19 @@ ArgxAddStatus argx_arg_add(
     head->name = malloc(sizeof(char) * (strlen(name) + 1));
     strcpy(head->name, name);
 
-    if(arg_short)
+    if(arg_short && strlen(arg_short) > 0)
     {
         head->arg_short = malloc(sizeof(char) * (strlen(arg_short) + 1));
         strcpy(head->arg_short, arg_short);
     }
     
-    if(arg_long)
+    if(arg_long && strlen(arg_long) > 0)
     {
         head->arg_long = malloc(sizeof(char) * (strlen(arg_long) + 1));
         strcpy(head->arg_long, arg_long);
     }
 
-    if(description)
+    if(description&& strlen(description) > 0 )
     {
         head->description = malloc(sizeof(char) * (strlen(description) + 1));
         strcpy(head->description, description);
